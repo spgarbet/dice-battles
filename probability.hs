@@ -53,11 +53,20 @@ odds ((dice,prob):xs) = convolute (map (\x -> dbinom x dice prob) [0..dice]) (od
 -- The pair represents the two sides of a conflict
 -- Each side has the respective data for the list of units
 -- The list is also the preferred order to take hits
-exampleProb  = ([0.8],   [0.2]) :: ([Double], [Double])
-exampleDice  = ([3],     [1])   :: ([Int],    [Int])
+-- exampleProb  = ([0.8],   [0.2]) :: ([Double], [Double])
+-- exampleDice  = ([3],     [1])   :: ([Int],    [Int])
 -- State is the number of units of a given type, note the first one is a war-sun and
 -- I'm using a list to denote it's progression down through hits.
-exampleState = ([[1,0]], [[1]]) :: ([[Int]],  [[Int]])
+-- exampleState = ([[1,0]], [[1]]) :: ([[Int]],  [[Int]])
+
+-- Define these as types, to make things easier later
+-- The second value of the pair is the one win probabilities are computed for 
+type Probability   = ([Double], [Double]) -- List of probabilities (must be in range 0 to 1)
+type Dice          = ([Int],    [Int])    -- Per Unit Type
+type State         = ([[Int]],  [[Int]])  -- Note, double list denotes multiple hit potential
+                                          -- I.e., [1,0] is a War Sun with no damage
+                                          -- I.e., [0,1] is a War Sun with one hit
+type Value         = ([Double], [Double]) -- List of each units value
 
   -----------------------------------------------------------------
  -- Now to deal with state pairs 
@@ -66,17 +75,24 @@ exampleState = ([[1,0]], [[1]]) :: ([[Int]],  [[Int]])
 pmap f (a,b)     = (f a, f b)
 pzip (a,b) (c,d) = (zip a c, zip b d)
 
--- Compute number of units from state
+-- Compute number of units from state (i.e. get rid of hit tracking)
+units :: State -> ([Int], [Int])
 units   state     = pmap (map sum) state
+
 -- Compute number of dice from state and dice per unit
+dice :: State -> Dice -> ([Int], [Int])
 dice    state d   = pmap (map (\(x,y) -> x*y)) $ pzip (units state) d
+
 -- compute probable hits per side
+hitProb :: State -> Dice -> Probability -> Probability
 hitProb state d p = pmap odds $ pzip (dice state d) p
 
 -- normalization factor to handle null case
+nullFactor :: [Double] -> [Double] -> Double
 nullFactor a b = 1/(1-(head a)*(head b))
 
 -- Is a state terminal? i.e. one-side has reached zero
+terminal :: State -> Bool
 terminal state = (a==0) || (b==0) where
                  (a,b) = pmap sum $ units state
 
@@ -104,6 +120,7 @@ damage side hits = if h > 0 then singles h s else s where (h, s) = mapAccumL mul
   -----------------------------------------------------------------
  -- Now to build the list of probable outcomes from a state
 --
+outcomes :: State -> Dice -> Probability -> [(Double, State)]
 outcomes s d p = map f g where
                  (ha, hb) = hitProb s d p
                  n = nullFactor ha hb
@@ -113,6 +130,7 @@ outcomes s d p = map f g where
                  g = groupBy (\x y -> (fst x) == (fst y)) o
                  f x = (sum (map snd x), fst (head x))
 
+wins :: State -> Dice -> Probability -> Double
 wins s d p = foldl f 0.0 o' where
              o = outcomes s d p
              o' = map (\(a,b) -> (pmap sum (units b), a, b)) o
