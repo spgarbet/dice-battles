@@ -124,8 +124,8 @@ wins s d p = foldl f 0.0 o' where
                           total+prob*(wins state d p)
                         else total
 
+-- n fighters versus a single war sun
 fighters n = 100 * (wins ([[1,0]],[[n]]) ([3],[1]) ([0.8],[0.2])) 
---mapAccumL () [] $ outcomes exampleState exampleDice exampleProb
 
 -- 1 carrier with 6 fighters vs. War sun, 4 fighters, 2 cruisers
 -- What happens, when n fighters leave for sabotage run, and war sun survives
