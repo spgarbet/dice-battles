@@ -6,6 +6,7 @@ import Fleet
 import Binomial
 import Data.Function.Memoize
 import Data.List
+import Debug.Trace
 
 type Probabilities = ([Probability], [Probability])
 
@@ -90,21 +91,31 @@ outcomes' (us, them) = tail cross  where
         oa       = zip hthem $ map (removeCasualties us)   [0..((length hthem)-1)]
         ob       = zip hus   $ map (removeCasualties them) [0..((length hus)-1)]
         cross    = [(n*(fst a)*(fst b), (snd a, snd b)) | a <- oa, b <- ob]
-        
+
+--tallyWins :: (Fleets -> Double) -> Double -> (Double, Fleets) -> Double
+--tallyWins func total (prob, (us, them)) = trace "Tally Ho!" $
+--      if them == []
+--        then total + prob -- Killed them, so add probability
+--        else if us == []
+--               then total -- Lost, they still have units
+--               else total + prob*(func (us, them)) -- Another round
+--
+--wins :: Fleets -> Double
+--wins = memoFix $ \wins' fleets -> trace "Inside" $ foldl (tallyWins wins') 0.0 (outcomes fleets)
+
+tallyWins :: Double -> (Double, Fleets) -> Double
+tallyWins total (prob, (us, them)) = trace "Tally Ho!" $
+      if them == []
+        then total + prob -- Killed them, so add probability
+        else if us == []
+               then total -- Lost, they still have units
+               else total + prob*(wins (us, them)) -- Another round
+
+wins' :: Fleets -> Double 
+wins' fleets = foldl tallyWins 0.0 (outcomes fleets)
 
 wins :: Fleets -> Double
-wins = memoize wins'
-
-wins' :: Fleets -> Double
-wins' fleets = foldl f 0.0 o where
-             o = outcomes fleets
-             f total (prob, (us, them)) = 
-               if them == []
-                 then total + prob -- Killed them, so add probability
-                 else if us == []
-                        then total -- Lost, they still have units
-                        else total + prob*(wins (us, them)) -- Another round
-
+wins = traceMemoize $ wins'
 
 survive :: Fleets -> Double
 survive fleets = foldl f 0.0 o where

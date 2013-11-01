@@ -10,6 +10,7 @@ module Binomial
 import Data.List
 import Fleet
 import Data.Function.Memoize
+import Debug.Trace
 
 -- A probability is a double from 0.0 to 1.0
 type Probability = Double
