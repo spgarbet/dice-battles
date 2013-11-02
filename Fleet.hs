@@ -85,6 +85,14 @@ barrage Destroyer       = True
 barrage HylarVDestroyer = True
 barrage _               = False
 
+-- Is a unit eligible for a sabotage run?
+sabotage :: Unit -> Bool
+sabotage Fighter         = True
+sabotage CyberFighter    = True
+sabotage AdvFighter      = True
+sabotage AdvCyberFighter = True
+sabotage _               = False
+
 -- A Fleet of units
 type Fleet = [(Unit, Int)]
 
