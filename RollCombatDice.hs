@@ -69,9 +69,11 @@ removeCasualties' ((unit,count):fs) n =
                                 then removeCasualties fs (n-count)
                                 else fs
 
+-- Value of a fleet
 value :: Fleet -> Double
 value f = sum $ map (\(u, n) -> (fromIntegral n)*(cost u))  f
 
+-- Value of a change in position relative to the first fleet
 valueDiff :: Fleets -> Fleets -> Double
 valueDiff (bus, bthem) (aus, athem) =  (value aus) - (value bus) + (value bthem) - (value athem)
 
