@@ -3,6 +3,10 @@ module Fleet where
 import Data.Function.Memoize
 import Data.Maybe
 
+  -----------------------------------------------------------------
+ --
+-- Basic Type Definition for Units in a Players Fleet
+--
 -- Given in remove casualty ordering (lowest value to highest value for a hit)
 data Unit = Dreadnought        | WarSun          |
             Fighter            | CyberFighter    | AdvFighter | AdvCyberFighter |
@@ -13,15 +17,17 @@ data Unit = Dreadnought        | WarSun          |
             DamagedWarSun 
                 deriving (Show, Eq, Enum, Ord)
 
+-- Make a Unit memoizable, to speed later computations
 instance Bounded Unit where
     minBound = Dreadnought
     maxBound = DamagedWarSun
-
--- Make the type Unit memoizable, to speed later computations
 instance Memoizable Unit where
     memoize = memoizeFinite
 
-
+  -----------------------------------------------------------------
+ --
+--  This is the essential definition of information on a race card
+--
 -- Base resource cost of a unit in TI3
 type Cost = Double
 

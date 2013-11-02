@@ -1,12 +1,8 @@
-module RollCombatDice
-( 
-) where
+module RollCombatDice where
 
 import Fleet
 import Binomial
-import Data.Function.Memoize
 import Data.List
-import Debug.Trace
 
 type Probabilities = ([Probability], [Probability])
 
@@ -17,11 +13,6 @@ type Probabilities = ([Probability], [Probability])
 papp f (a,b)      = (f a, f b)
 pmap f (a,b)      = (map f a, map f b)
 pzip (a,b) (c,d)  = (zip a c, zip b d)
--- pdiff (a,b) (c,d)  = (zipWith (-) a c, zipWith (-) b d)
--- pmul  (a,b) (c,d)  = (zipWith (*) a c, zipWith (*) b d)
--- pfromInt :: ([Int], [Int]) -> ([Double],[Double])
--- pfromInt  d        = pmap (map fromIntegral) d
-
 
 -- Compute number of units from state (i.e. get rid of hit tracking)
 size :: Fleets -> ([Int], [Int])
@@ -78,6 +69,12 @@ removeCasualties' ((unit,count):fs) n =
                                 then removeCasualties fs (n-count)
                                 else fs
 
+value :: Fleet -> Double
+value f = sum $ map (\(u, n) -> (fromIntegral n)*(cost u))  f
+
+valueDiff :: Fleets -> Fleets -> Double
+valueDiff (bus, bthem) (aus, athem) =  (value aus) - (value bus) + (value bthem) - (value athem)
+
   -----------------------------------------------------------------
  -- Now to build the list of probable outcomes from a state
 --
@@ -88,35 +85,3 @@ outcomes (us, them) = tail cross  where
         oa       = zip hthem $ map (removeCasualties us)   [0..((length hthem)-1)]
         ob       = zip hus   $ map (removeCasualties them) [0..((length hus)-1)]
         cross    = [(n*(fst a)*(fst b), (snd a, snd b)) | a <- oa, b <- ob]
-
-tallyWins :: (Fleets -> Double) -> Double -> (Double, Fleets) -> Double
-tallyWins func total (prob, (us, them)) = 
-      if them == []
-        then total + prob -- Killed them, so add probability
-        else if us == []
-               then total -- Lost, they still have units
-               else total + prob*(func (us, them)) -- Another round
-
-wins :: Fleets -> Double
-wins = memoFix $ \wins' fleets -> foldl (tallyWins wins') 0.0 (outcomes fleets)
-
-survive :: Fleets -> Double
-survive fleets = foldl f 0.0 o where
-             o = outcomes fleets
-             f total (prob, (us, them)) = 
-               if them == []
-                 then if us == []
-                        then total
-                        else total + prob
-                 else if us == []
-                        then total -- Lost, they still have units
-                        else total + prob*(survive (us, them)) -- Another round
-
-x = ([ (WarSun, 2), (Cruiser, 3)], [(Fighter, 5), (Carrier, 1),(CyberFighter, 2)]) :: (Fleet, Fleet)  
-
-simple =  ([(Fighter, 5)], [(WarSun, 1)] ) :: (Fleet, Fleet)  
-
-direct = ([(Fighter, 1)], [(Fighter, 1)] ) :: (Fleet, Fleet)  
-
-fighter n = 100.0*(wins d) where
-             d = ([(Fighter, n)], [(WarSun, 1)] ) :: (Fleet, Fleet)  
