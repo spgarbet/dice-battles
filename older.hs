@@ -1,15 +1,20 @@
 import Data.List
 
   -----------------------------------------------------------------
- -- Binomial definitions
+ -- 
+-- Binomial coefficients
 --
--- Binomial coefficient
 choose :: Int -> Int -> Int
 choose n 0 = 1
 choose 0 k = 0
 choose n k = (choose (n-1) (k-1)) * n `div` k
 
--- Binomial distribution
+  -----------------------------------------------------------------
+ -- 
+-- Binomial distribution, p.m.f.
+--  k is number of successes
+--  n is number of trials
+--  p is the probability of success on a trial
 dbinom :: Int -> Int -> Double -> Double
 dbinom k n p = binomCoef*(p^k')*((1-p)^(n'-k'))
                where binomCoef = fromIntegral (choose n k)
@@ -17,7 +22,8 @@ dbinom k n p = binomCoef*(p^k')*((1-p)^(n'-k'))
                      n'        = fromIntegral n
 
   -----------------------------------------------------------------
- -- Convolution to determine outcome possibilities
+ --
+-- Discrete convolution to determine outcome possibilities
 --
 convolute a b = if (length a) <= (length b)
                   then convolute' a b
@@ -60,7 +66,10 @@ odds ((dice,prob):xs) = convolute (map (\x -> dbinom x dice prob) [0..dice]) (od
 -- The list is also the preferred order to take hits
 -- Define these as types, to make things easier later
 -- The second value of the pair is the one win probabilities are computed for 
-type Probability   = ([Double], [Double]) -- List of probabilities (must be in range 0 to 1)
+
+type Prob = Double
+
+type Probability   = ([Prob], [Prob]) -- List of probabilities (must be in range 0 to 1)
 type Dice          = ([Int],    [Int])    -- Per Unit Type
 type State         = ([[Int]],  [[Int]])  -- Note, double list denotes multiple hit potential
                                           -- I.e., [1,0] is a War Sun with no damage
@@ -215,24 +224,36 @@ sabotage_value_failure n = value ([[4],[2],[1,0]],[[6-n],[1]]) ([1,1,3],[1,1]) (
 
 sabotage_value_success n = value ([[4],[2]],[[6-n],[1]]) ([1,1],[1,1]) ([0.2, 0.3],[0.2,0.2]) ([0.5,2,12],[0.5,3])
 
-–– success_odds <- c(8.332132827700946e-2, 28.22842074816851, 13.947608655178446, 4.536908589124441, 0.788230992032397, 4.729588858580182e-2, 2.1031956630313879e-4)
-–– 
-–– failure_odds <- c(8.332132827700946e-2, 9.539364917006783e-3, 5.286671171755559e-4, 1.0371667262687312e-5, 3.794170439987539e-8, 3.86263808420207e-12, 2.3403697656337865e-22)
-–– 
-–– odds_to_win <- pbinom(0, 0:6, 0.02)*failure_odds + (1-pbinom(0, 0:6, 0.02))*success_odds
-–– 
-–– failure <- c(-5.343109310309482, -5.072723377434875, -4.739183940412951, -4.358878771907192, -3.9356289609298165, -3.4790585963959235, -2.9999677943434895) - 0:6*0.5
-–– # Valuation is harder here, the war sun is destroyed, but some fighters survive, so losses are
-–– # Another binomial convolution
-–– 
-–– fighters_lost <- c(0,
-––                    sum(dbinom(0:1, 1, 0.02)*1:0),
-––                    sum(dbinom(0:2, 2, 0.02)*2:0),
-––                    sum(dbinom(0:3, 3, 0.02)*3:0),
-––                    sum(dbinom(0:4, 4, 0.02)*4:0),
-––                    sum(dbinom(0:5, 5, 0.02)*5:0),
-––                    sum(dbinom(0:6, 6, 0.02)*6:0)
-––                    )
-–– 
-–– success <- c(0, -1.2275289928860078, -2.4683736008792554, -3.182602196156854, -3.347726764474012, -3.1819500129483282, -2.874425064303346) +12 -odds_to_win*fighters_lost*0.5 - 0:6*0.5*(1-odds_to_win)
+-- success_odds <- c(8.332132827700946e-2, 28.22842074816851, 13.947608655178446, 4.536908589124441, 0.788230992032397, 4.729588858580182e-2, 2.1031956630313879e-4)
+-- 
+-- failure_odds <- c(8.332132827700946e-2, 9.539364917006783e-3, 5.286671171755559e-4, 1.0371667262687312e-5, 3.794170439987539e-8, 3.86263808420207e-12, 2.3403697656337865e-22)
+-- 
+-- odds_to_win <- pbinom(0, 0:6, 0.02)*failure_odds + (1-pbinom(0, 0:6, 0.02))*success_odds
+-- 
+-- failure <- c(-5.343109310309482, -5.072723377434875, -4.739183940412951, -4.358878771907192, -3.9356289609298165, -3.4790585963959235, -2.9999677943434895) - 0:6*0.5
+-- # Valuation is harder here, the war sun is destroyed, but some fighters survive, so losses are
+-- # Another binomial convolution
+-- 
+-- fighters_lost <- c(0,
+--                    sum(dbinom(0:1, 1, 0.02)*1:0),
+--                    sum(dbinom(0:2, 2, 0.02)*2:0),
+--                    sum(dbinom(0:3, 3, 0.02)*3:0),
+--                    sum(dbinom(0:4, 4, 0.02)*4:0),
+--                    sum(dbinom(0:5, 5, 0.02)*5:0),
+--                    sum(dbinom(0:6, 6, 0.02)*6:0)
+--                    )
+-- 
+-- success <- c(0, -1.2275289928860078, -2.4683736008792554, -3.182602196156854, -3.347726764474012, -3.1819500129483282, -2.874425064303346) +12 -odds_to_win*fighters_lost*0.5 - 0:6*0.5*(1-odds_to_win)
 -- pbinom(0, 0:6, 0.02)*failure + (1-pbinom(0, 0:6, 0.02))*success
+--
+-- What will it take for the valuation to break over....
+
+-- Let's try memoization
+
+mvalue = memoize4 value
+
+-- 1 carrier with 6 fighters, 2 cruisers and dreadnought vs. War sun, 4 fighters, 2 cruisers
+-- What happens, when n fighters leave for sabotage run, and war sun survives
+bigger_sabotage_value_failure n = value ([[4],[2],[1,0]],[[6-n],[1],[2],[1,0]]) ([1,1,3],[1,1,1,1]) ([0.2, 0.4, 0.8],[0.2, 0.2, 0.4, 0.6]) ([0.5,2,12],[0.5,3,2,5])
+
+bigger_sabotage_value_success n = value ([[4],[2]],[[6-n],[1],[2],[1,0]]) ([1,1],[1,1,1,1]) ([0.2, 0.4],[0.2,0.2,0.4,0.6]) ([0.5,2,12],[0.5,3,2,5])
