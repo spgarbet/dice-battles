@@ -19,7 +19,7 @@ instance Bounded Unit where
 
 -- Make the type Unit memoizable, to speed later computations
 instance Memoizable Unit where
-    memoize func f = memoizeFinite (func.toEnum) (fromEnum f)  
+    memoize = memoizeFinite
 
 
 -- Base resource cost of a unit in TI3
