@@ -5,6 +5,7 @@ module Binomial
 , convolute
 , dmultinomial
 , toHit
+, dsabotage
 ) where
 
 import Data.List
@@ -94,3 +95,20 @@ dmultinomial :: [(Rolls, Probability)] -> [Probability]
 dmultinomial [] = []
 dmultinomial ((dice,prob):[]) = dbinom dice prob
 dmultinomial ((dice,prob):xs) = convolute (dbinom dice prob) (dmultinomial xs)
+
+  -----------------------------------------------------------------
+ --
+-- Compute the sabotage p.m.f. for a single run
+--   probability that a fighter survives outer defenses is binomial ~b(n, 0.2)
+--   probability that a fighter survives inner defenses is all past first success at 0.1
+--
+-- Returned is a list of probabilities,
+--    the list position is the number of survivors at that probability
+--
+dsabotage n = foldl f [] conv where
+    f [] t = t
+    f (h:hs) (g:gs) = (h+g):(f hs gs)
+    inner n' = map f [0..n'] where f k = if k > 0 then 0.9^(n'-k) * 0.1 else 0.9^n'
+    outer n' = dbinom n' 0.2
+    conv    = map (\(k,p) -> map (* p) (inner k)) (zip [0..n] (outer n))
+

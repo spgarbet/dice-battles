@@ -53,7 +53,7 @@ hitMass fleets = papp dmultinomial $ pzip (throws fleets) (hitProb fleets)
 removeCasualties :: Fleet -> Int -> Fleet
 removeCasualties [] _  = []
 removeCasualties f  0  = f
-removeCasualties f n = sort $ removeCasualties' f n
+removeCasualties f n = sort $ removeCasualties' (sort f) n
 
 removeCasualties' :: Fleet -> Int -> Fleet
 removeCasualties' ((unit,count):fs) n = 
@@ -61,8 +61,8 @@ removeCasualties' ((unit,count):fs) n =
         Just s  ->  if n < count
                         then (unit, count - n):((s, count-n):fs)
                         else if n > count
-                               then sort $ removeCasualties ((s, count):fs) (n - count)
-                               else (s, count):fs
+                               then removeCasualties ((s, count):fs) (n - count)
+                               else sort $ (s, count):fs
         Nothing ->  if n < count
                         then (unit, count - n):fs
                         else if n > count
