@@ -14,13 +14,16 @@ data Unit = Dreadnought        | WarSun          |
             Cruiser            | HylarVCruiser   |
             Carrier            |
             DamagedDreadnought |
-            DamagedWarSun 
+            DamagedWarSun      |
+            PDS                | MagenPDS        | GravitonPDS | GravitonMagenPDS |
+            ShockTroop         | GroundForce     | 
+            SpaceDock
                 deriving (Show, Eq, Enum, Ord)
 
 -- Make a Unit memoizable, to speed later computations
 instance Bounded Unit where
     minBound = Dreadnought
-    maxBound = DamagedWarSun
+    maxBound = SpaceDock
 instance Memoizable Unit where
     memoize = memoizeFinite
 
@@ -45,14 +48,26 @@ cost Fighter            = 0.5
 cost WarSun             = 12
 cost DamagedWarSun      = 12
 cost DamagedDreadnought = 5
+cost PDS                = 1
+cost MagenPDS           = 1
+cost GravitonPDS        = 1
+cost GravitonMagenPDS   = 1
+cost GroundForce        = 0.5
+cost ShockTroop         = 1
 
--- Number of battle dice for a given unit
+-- Number of rolls of battle dice for a given unit during space combat
 type Rolls = Int
 
 rolls :: Unit -> Rolls
-rolls WarSun        = 3
-rolls DamagedWarSun = 3
-rolls _             = 1
+rolls WarSun           = 3
+rolls DamagedWarSun    = 3
+rolls PDS              = 0
+rolls MagenPDS         = 0
+rolls GravitonPDS      = 0
+rolls GravitonMagenPDS = 0
+rolls GroundForce      = 0
+rolls ShockTroop       = 0
+rolls _                = 1
 
 -- BattleDice
 type BattleDice = Int
@@ -71,6 +86,10 @@ battleDice AdvCyberFighter    = 7
 battleDice WarSun             = 3
 battleDice DamagedWarSun      = 3
 battleDice DamagedDreadnought = 3
+battleDice PDS                = 6
+battleDice MagenPDS           = 5
+battleDice GravitonPDS        = 6  -- But it rerolls failures !!
+battleDice GravitonMagenPDS   = 5  -- Ditto
 
 -- This returns ranks of sustain damage possible damage
 sustainDamage :: Unit -> Maybe Unit
