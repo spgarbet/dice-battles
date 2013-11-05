@@ -9,6 +9,9 @@ import Data.List
 import Debug.Trace
 
 -- z = ([(Carrier, 1), (Fighter, 6)], [(WarSun,  1), (Fighter, 4), (Cruiser, 2)]) :: Fleets
+-- z' = ([(Cruiser, 1),(Carrier, 1), (Fighter, 6)], [(WarSun,  1), (Fighter, 4), (Cruiser, 2)]) :: Fleets
+-- z'' = ([(Cruiser, 2),(Carrier, 1), (Fighter, 6)], [(WarSun,  1), (Fighter, 4), (Cruiser, 2)]) :: Fleets
+-- z n = ([(Cruiser, n),(Carrier, 1), (Fighter, 6)], [(WarSun,  1), (Fighter, 4), (Cruiser, 2)]) :: Fleets
 
 partitionFighters :: Fleet -> (Fleet, Fleet)
 partitionFighters = partition (\(u,_) -> Fleet.sabotage u)
@@ -46,11 +49,13 @@ removeSabotageHit ((unit,count):fs)  =
 sabotageOutcomes :: Fleets -> Int -> [(Int, Probability, Fleets)]
 sabotageOutcomes (attacker, defender) n = map g sp
     where (f,main)    = partitionFighters attacker   -- take out the fighters
-          (_,rejoin)  = splitUnits f n          -- split out n fighters
-          attacker'   = sort $ rejoin ++ main  -- rejoin the uncommitted n
+          (run,rejoin)= splitUnits f n          -- split out n fighters
+          attacker'   = sort $ rejoin ++ main  -- rejoin the uncommitted
           sp          = zip [0..n] $ dsabotage n
           success     = removeSabotageHit (sort defender)
-          g (k,p)     = if k == 0 then (k, p, (attacker', defender)) else (k, p, (attacker', success))
+          g (k,p)     = if k == 0
+			              then (k, p, (attacker', defender))
+						  else (k, p, (attacker'++(takeUnits run k), success))
 
 sabotageValues :: Fleets -> Int -> [(Int, Probability, Outcome)]
 sabotageValues f n = map (\(k, p, x) -> (k, p, predict x)) (sabotageOutcomes f n)
@@ -58,16 +63,16 @@ sabotageValues f n = map (\(k, p, x) -> (k, p, predict x)) (sabotageOutcomes f n
 sumOutcome :: Outcome -> (Probability, Outcome) -> Outcome
 sumOutcome (a,b,c,d) (p,(e,f,g,h)) = (a+p*e, b+p*f, c+p*g, d+p*h)
 
--- Assume that all ships on a sabotage run are lost, then add back the survivors * probability win
+-- Subtract ships lost to Sabotage
 valueShips :: Int -> Int -> Probability -> Double
-valueShips n k w = 0.5*((fromIntegral k)*w-(fromIntegral n))
+valueShips n k w = -0.5*(fromIntegral (n-k))
 
-addLoss :: Int -> (Int, Probability, Outcome ) -> (Probability, Outcome)
-addLoss n (k, p, (w,m,l,v)) = if k > 0
-	                            then (p, (w, m, l, v+(valueShips n k w)+12.0))
-								else (p, (w, m, l, v+(valueShips n k w)))
+adjValue :: Int -> (Int, Probability, Outcome ) -> (Probability, Outcome)
+adjValue n (k, p, (w,m,l,v)) = if k > 0
+	                             then (p, (w, m, l, v+(valueShips n k w)+12.0))
+								 else (p, (w, m, l, v+(valueShips n k w)))
 
 sabotage :: Fleets -> Int -> Outcome
-sabotage fl n = foldl sumOutcome (0.0, 0.0, 0.0, 0.0) $ map (addLoss n) values
+sabotage fl n = foldl sumOutcome (0.0, 0.0, 0.0, 0.0) $ map (adjValue n) values
     where values      = sabotageValues fl n
           
